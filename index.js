@@ -13,33 +13,30 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://shibbuchoure079_db_user:ccHiHeO3NgYDiu5L@sh1bbuchat.k6qooya.mongodb.net/?appName=Sh1bbuchat')
-.then(() => {
-  console.log('MongoDB Connected! 🍃');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://shibbuchoure079_db_user:ccHiHeO3NgYDiu5L@sh1bbuchat.k6qooya.mongodb.net/?appName=Sh1bbuchat', {
+  serverSelectionTimeoutMS: 5000,
 })
-.catch((err) => {
-  console.log('MongoDB Error:', err);
-});
+.then(() => { console.log('MongoDB Connected! 🍃'); })
+.catch((err) => { console.log('MongoDB Error:', err); });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/friends', friendRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-
   socket.on('sendMessage', (data) => {
     io.emit('receiveMessage', data);
   });
-
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
 });
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Shibbu Chat Server Chal Raha Hai! 🎉' });
+  res.json({ message: 'ShizM Chat Server Chal Raha Hai! 🎉' });
 });
 
-server.listen(3000, () => {
-  console.log('Server start ho gaya port 3000 pe!');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server start ho gaya port ${PORT} pe!`);
 });
