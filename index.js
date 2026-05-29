@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const authRoutes = require('./routes/auth');
 const friendRoutes = require('./routes/friends');
+const mediaRoutes = require('./routes/media');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,6 +22,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://shibbuchoure079_db_us
 
 app.use('/api/auth', authRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/media', mediaRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
