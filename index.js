@@ -1,3 +1,5 @@
+const dmRoutes = require('./routes/dm');
+const notificationRoutes = require('./routes/notifications');
 const express = require('express');
 const mongoose = require('mongoose');
 const http = require('http');
@@ -23,22 +25,29 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://shibbuchoure079_db_us
 app.use('/api/auth', authRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api', notificationRoutes);
+app.use('/api/dm', dmRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+
+  // DM room join karo
+  socket.on('joinRoom', (room) => {
+    socket.join(room);
+    console.log(`Joined room: ${room}`);
+  });
+
+  // DM message bhejo
+  socket.on('sendDM', (data) => {
+    io.to(data.room).emit('receiveDM', data);
+  });
+
+  // Group message (purana)
   socket.on('sendMessage', (data) => {
     io.emit('receiveMessage', data);
   });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
-});
-
-app.get('/', (req, res) => {
-  res.json({ message: 'ShizM Chat Server Chal Raha Hai! 🎉' });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server start ho gaya port ${PORT} pe!`);
 });
