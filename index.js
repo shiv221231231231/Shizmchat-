@@ -1,3 +1,4 @@
+const groupRoutes = require('./routes/group');
 const dmRoutes = require('./routes/dm');
 const notificationRoutes = require('./routes/notifications');
 const express = require('express');
@@ -27,6 +28,7 @@ app.use('/api/friends', friendRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api', notificationRoutes);
 app.use('/api/dm', dmRoutes);
+app.use('/api/group', groupRoutes);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
@@ -42,6 +44,16 @@ io.on('connection', (socket) => {
     io.to(data.room).emit('receiveDM', data);
   });
 
+  // Group message
+  socket.on('sendGroupMessage', (data) => {
+     io.to(data.groupId).emit('receiveGroupMessage', data);
+   });
+
+// Group room join
+socket.on('joinGroup', (groupId) => {
+  socket.join(groupId);
+  console.log(`Joined group: ${groupId}`);
+});
   // Group message (purana)
   socket.on('sendMessage', (data) => {
     io.emit('receiveMessage', data);
