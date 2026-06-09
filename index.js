@@ -11,9 +11,7 @@ const mediaRoutes = require('./routes/media');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: '*' }
-});
+const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.json());
 
@@ -30,40 +28,75 @@ app.use('/api', notificationRoutes);
 app.use('/api/dm', dmRoutes);
 app.use('/api/group', groupRoutes);
 
+// Online users map
+const onlineUsers = new Map(); // userId -> socketId
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // DM room join karo
-  socket.on('joinRoom', (room) => {
-    socket.join(room);
-    console.log(`Joined room: ${room}`);
+  // User online mark karo
+  socket.on('userOnline', (userId) => {
+    onlineUsers.set(userId, socket.id);
+    io.emit('onlineUsers', Array.from(onlineUsers.keys()));
   });
 
-  // DM message bhejo
+  // DM room join
+  socket.on('joinRoom', (room) => {
+    socket.join(room);
+  });
+
+  // DM message
   socket.on('sendDM', (data) => {
     io.to(data.room).emit('receiveDM', data);
   });
 
+  // Typing indicator DM
+  socket.on('typing', (data) => {
+    socket.to(data.room).emit('typing', { senderId: data.senderId, isTyping: data.isTyping });
+  });
+
+  // Read receipt DM
+  socket.on('messageRead', (data) => {
+    io.to(data.room).emit('messageRead', { readBy: data.readBy });
+  });
+
+  // DM Reaction
+  socket.on('dmReaction', (data) => {
+    io.to(data.room).emit('dmReaction', data);
+  });
+
+  // Group room join
+  socket.on('joinGroup', (groupId) => {
+    socket.join(groupId);
+  });
+
   // Group message
   socket.on('sendGroupMessage', (data) => {
-     io.to(data.groupId).emit('receiveGroupMessage', data);
-   });
+    io.to(data.groupId).emit('receiveGroupMessage', data);
+  });
 
-// Group room join
-socket.on('joinGroup', (groupId) => {
-  socket.join(groupId);
-  console.log(`Joined group: ${groupId}`);
-});
-  // Group message (purana)
-  socket.on('sendMessage', (data) => {
-    io.emit('receiveMessage', data);
+  // Group typing
+  socket.on('groupTyping', (data) => {
+    socket.to(data.groupId).emit('groupTyping', { senderName: data.senderName, isTyping: data.isTyping });
+  });
+
+  // Group reaction
+  socket.on('groupReaction', (data) => {
+    io.to(data.groupId).emit('groupReaction', data);
   });
 
   socket.on('disconnect', () => {
+    // Remove from online
+    for (const [userId, sId] of onlineUsers.entries()) {
+      if (sId === socket.id) {
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
+    io.emit('onlineUsers', Array.from(onlineUsers.keys()));
     console.log('User disconnected:', socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-});
+server.listen(PORT, () => {});
