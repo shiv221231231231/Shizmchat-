@@ -43,7 +43,7 @@ router.get('/requests/:userId', async (req, res) => {
     const requests = await Friend.find({
       receiver: req.params.userId,
       status: 'pending'
-    }).populate('sender', 'name email');
+    }).populate('sender', 'name email avatar');
     res.json(requests);
   } catch (error) {
     res.json({ message: 'Error: ' + error.message });
@@ -72,7 +72,7 @@ router.get('/list/:userId', async (req, res) => {
         { sender: req.params.userId, status: 'accepted' },
         { receiver: req.params.userId, status: 'accepted' }
       ]
-    }).populate('sender receiver', 'name email');
+    }).populate('sender receiver', 'name email avatar');
     res.json(friends);
   } catch (error) {
     res.json({ message: 'Error: ' + error.message });
