@@ -14,7 +14,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-pushToken: {
+  avatar: {
+    type: String,
+    default: null
+  },
+  pushToken: {
     type: String,
     default: null
   }
