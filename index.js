@@ -85,6 +85,49 @@ io.on('connection', (socket) => {
     io.to(data.groupId).emit('groupReaction', data);
   });
 
+  // ── VOICE CALL SIGNALING ─────────────────────────
+  socket.on('call-user', (data) => {
+    const { to, from, fromName, offer } = data;
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('incoming-call', { from, fromName, offer });
+    } else {
+      io.to(socket.id).emit('call-failed', { reason: 'User offline hai' });
+    }
+  });
+
+  socket.on('call-accepted', (data) => {
+    const { to, answer } = data;
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call-accepted', { answer });
+    }
+  });
+
+  socket.on('call-rejected', (data) => {
+    const { to } = data;
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call-rejected');
+    }
+  });
+
+  socket.on('ice-candidate', (data) => {
+    const { to, candidate } = data;
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('ice-candidate', { candidate });
+    }
+  });
+
+  socket.on('end-call', (data) => {
+    const { to } = data;
+    const targetSocketId = onlineUsers.get(to);
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('call-ended');
+    }
+  });
+
   socket.on('disconnect', () => {
     // Remove from online
     for (const [userId, sId] of onlineUsers.entries()) {
