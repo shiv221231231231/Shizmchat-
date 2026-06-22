@@ -86,7 +86,7 @@ io.on('connection', (socket) => {
   });
 
   // ── VOICE CALL SIGNALING ─────────────────────────
-  socket.on('call-user', (data) => {
+  socket.on('call-user', async (data) => {
     console.log('CALL-USER event:', JSON.stringify(data));
     console.log('Online users map:', JSON.stringify(Array.from(onlineUsers.entries())));
     console.log('Target socket:', onlineUsers.get(data.to));
@@ -94,6 +94,25 @@ io.on('connection', (socket) => {
     const targetSocketId = onlineUsers.get(to);
     if (targetSocketId) {
       io.to(targetSocketId).emit('incoming-call', { from, fromName, offer });
+      // Push notification bhi bhejo (background ke liye)
+      try {
+        const User = require('./models/User');
+        const receiver = await User.findById(to);
+        if (receiver?.pushToken) {
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: receiver.pushToken,
+              title: fromName + ' ka incoming call! uD83DuDCDE',
+              body: 'Tap karo call receive karne ke liye',
+              sound: 'default',
+              data: { type: 'incoming-call', from, fromName, offer: JSON.stringify(offer) },
+              priority: 'high',
+            }),
+          });
+        }
+      } catch(e) { console.log('Push notification error:', e.message); }
     } else {
       io.to(socket.id).emit('call-failed', { reason: 'User offline hai' });
     }
