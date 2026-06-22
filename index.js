@@ -87,6 +87,9 @@ io.on('connection', (socket) => {
 
   // ── VOICE CALL SIGNALING ─────────────────────────
   socket.on('call-user', (data) => {
+    console.log('CALL-USER event:', JSON.stringify(data));
+    console.log('Online users map:', JSON.stringify(Array.from(onlineUsers.entries())));
+    console.log('Target socket:', onlineUsers.get(data.to));
     const { to, from, fromName, offer } = data;
     const targetSocketId = onlineUsers.get(to);
     if (targetSocketId) {
