@@ -37,6 +37,9 @@ router.delete('/message/:messageId', async (req, res) => {
     if (!msg) return res.status(404).json({ error: 'Message nahi mila!' });
     if (msg.sender.toString() !== senderId) return res.status(403).json({ error: 'Permission nahi hai!' });
     await Message.findByIdAndDelete(req.params.messageId);
+    const room = msg.room;
+    const io = req.app.get('io');
+    if (io) io.to(room).emit('messageDeleted', { messageId: req.params.messageId });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });

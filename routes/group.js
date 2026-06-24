@@ -62,3 +62,20 @@ router.get('/members/:groupId', async (req, res) => {
 });
 
 module.exports = router;
+
+// Group message delete
+router.delete('/message/:messageId', async (req, res) => {
+  try {
+    const msg = await GroupMessage.findById(req.params.messageId);
+    if (!msg) return res.status(404).json({ error: 'Message nahi mila!' });
+    const groupId = msg.groupId;
+    await GroupMessage.findByIdAndDelete(req.params.messageId);
+    const io = req.app.get('io');
+    if (io) io.to(groupId.toString()).emit('groupMessageDeleted', { messageId: req.params.messageId });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;
