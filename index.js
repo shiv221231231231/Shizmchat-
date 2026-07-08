@@ -1,4 +1,5 @@
 const groupRoutes = require('./routes/group');
+const sendPushNotification = require('./sendNotification');
 const dmRoutes = require('./routes/dm');
 const notificationRoutes = require('./routes/notifications');
 const express = require('express');
@@ -100,17 +101,11 @@ io.on('connection', (socket) => {
         const User = require('./models/User');
         const receiver = await User.findById(to);
         if (receiver?.pushToken) {
-          await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: receiver.pushToken,
-              title: fromName + ' ka incoming call! uD83DuDCDE',
-              body: 'Tap karo call receive karne ke liye',
-              sound: 'default',
-              data: { type: 'incoming-call', from, fromName, offer: JSON.stringify(offer) },
-              priority: 'high',
-            }),
+          await sendPushNotification({
+            pushToken: receiver.pushToken,
+            title: fromName + ' ka incoming call! 📞',
+            body: 'Tap karo call receive karne ke liye',
+            data: { type: 'incoming-call', from, fromName, offer: JSON.stringify(offer) },
           });
         }
       } catch(e) { console.log('Push notification error:', e.message); }
