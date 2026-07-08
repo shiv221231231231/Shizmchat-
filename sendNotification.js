@@ -1,13 +1,22 @@
 const admin = require('firebase-admin');
 
-if (!admin.apps.length) {
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : require('./service-account.json');
+let initialized = false;
 
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+function initFirebase() {
+  if (initialized) return;
+  try {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : require('./service-account.json');
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    initialized = true;
+    console.log('Firebase Admin initialized!');
+  } catch (e) {
+    console.log('Firebase init error:', e.message);
+  }
 }
 
 async function sendPushNotification({ pushToken, title, body, data = {} }) {
@@ -20,7 +29,8 @@ async function sendPushNotification({ pushToken, title, body, data = {} }) {
     });
     const result = await response.json();
     if (result.data?.status === 'error') {
-      console.log('Expo push failed, trying Firebase Admin...');
+      console.log('Expo failed, trying Firebase Admin...');
+      initFirebase();
       const message = {
         notification: { title, body },
         data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
@@ -30,7 +40,7 @@ async function sendPushNotification({ pushToken, title, body, data = {} }) {
       await admin.messaging().send(message);
       console.log('Firebase Admin notification sent!');
     } else {
-      console.log('Expo push sent successfully!');
+      console.log('Expo push sent!');
     }
     return true;
   } catch (e) {
